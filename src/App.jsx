@@ -4,7 +4,7 @@ import { pieces } from './pieces';
 import './GameBoard.css';
 
 function App() {
-  const emptyBoard = Array(9).fill().map(() => Array(9).fill(0));
+  const emptyBoard = Array(8).fill().map(() => Array(8).fill(0));
   const [score, setScore] = useState(0);
   const [board, setBoard] = useState(emptyBoard);
   const [currentPiece, setCurrentPiece] = useState(pieces[0]);
@@ -19,7 +19,7 @@ function App() {
     const rows = piece.length;
     const cols = piece[0].length;
 
-    if (row + rows > 9 || col + cols > 9) return false;
+    if (row + rows > 8 || col + cols > 8) return false;
 
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
@@ -69,15 +69,15 @@ function App() {
   function clearLines(board) {
     const newBoard = board.map(r => [...r]);
 
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 8; i++) {
       if (newBoard[i].every(cell => cell === 1)) {
-        newBoard[i] = Array(9).fill(0);
+        newBoard[i] = Array(8).fill(0);
       }
     }
 
-    for (let j = 0; j < 9; j++) {
+    for (let j = 0; j < 8; j++) {
       if (newBoard.every(row => row[j] === 1)) {
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < 8; i++) {
           newBoard[i][j] = 0;
         }
       }
@@ -88,18 +88,18 @@ function App() {
   function countClearedLines(oldBoard, newBoard) {
     let cleared = 0;
 
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 8; i++) {
       const oldRow = oldBoard[i].join('');
       const newRow = newBoard[i].join('');
-      if (oldRow !== newRow && newRow === '000000000') {
+      if (oldRow !== newRow && newRow === '00000000') {
         cleared++;
       }
     }
 
-    for (let j = 0; j < 9; j++) {
+    for (let j = 0; j < 8; j++) {
       const oldCol = oldBoard.map(row => row[j]).join('');
       const newCol = newBoard.map(row => row[j]).join('');
-      if (oldCol !== newCol && newCol === '000000000') {
+      if (oldCol !== newCol && newCol === '00000000') {
         cleared++;
       }
     }
@@ -136,12 +136,14 @@ function App() {
         }}
       >
         {currentPiece.map((row, i) =>
-          row.map((cell, j) => (
-            <div
-              key={`${i}-${j}`}
-              className={`cell ${cell ? 'filled' : ''}`}
-            />
-          ))
+          row.map((cell, j) =>
+            cell === 1 ? (
+              <div
+                key={`${i}-${j}`}
+                className="cell filled"
+              />
+            ) : null
+          )
         )}
       </div>
 
