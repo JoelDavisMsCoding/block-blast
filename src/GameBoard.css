@@ -19,3 +19,9 @@
 .cell.filled {
   background-color: #4caf50;
 }
+
+.cell.empty {
+  background-color: transparent;
+  border: none;
+  pointer-events: none;
+}

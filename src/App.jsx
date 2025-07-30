@@ -136,14 +136,12 @@ function App() {
         }}
       >
         {currentPiece.map((row, i) =>
-          row.map((cell, j) =>
-            cell === 1 ? (
-              <div
-                key={`${i}-${j}`}
-                className="cell filled"
-              />
-            ) : null
-          )
+          row.map((cell, j) => (
+            <div
+              key={`${i}-${j}`}
+              className={`cell ${cell === 1 ? 'filled' : 'empty'}`}
+            />
+          ))
         )}
       </div>
 
