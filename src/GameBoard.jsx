@@ -2,6 +2,23 @@
 import React from "react";
 import "./GameBoard.css";
 
+// Helper: find top-left filled cell of a piece
+function getTopLeftOffset(shape) {
+  let top = null;
+  let left = null;
+
+  for (let i = 0; i < shape.length; i++) {
+    for (let j = 0; j < shape[i].length; j++) {
+      if (shape[i][j] === 1) {
+        if (top === null || i < top) top = i;
+        if (left === null || j < left) left = j;
+      }
+    }
+  }
+
+  return [top || 0, left || 0];
+}
+
 function GameBoard({
   board,
   onDropPiece,
@@ -12,14 +29,18 @@ function GameBoard({
 }) {
   function isGhostCell(r, c) {
     if (!hoverCoords || !currentPiece) return false;
-    const [baseRow, baseCol] = hoverCoords;
+    const [hoverRow, hoverCol] = hoverCoords;
+    const shape = currentPiece.shape;
+    const [topOffset, leftOffset] = getTopLeftOffset(shape);
+    const baseRow = hoverRow - topOffset;
+    const baseCol = hoverCol - leftOffset;
 
     if (!canPlacePieceAt(baseRow, baseCol, currentPiece)) return false;
 
-    for (let i = 0; i < currentPiece.length; i++) {
-      for (let j = 0; j < currentPiece[i].length; j++) {
+    for (let i = 0; i < shape.length; i++) {
+      for (let j = 0; j < shape[i].length; j++) {
         if (
-          currentPiece[i][j] === 1 &&
+          shape[i][j] === 1 &&
           r === baseRow + i &&
           c === baseCol + j
         ) {
@@ -30,16 +51,27 @@ function GameBoard({
     return false;
   }
 
+  function handleDrop(r, c) {
+    if (!currentPiece) return;
+    const [topOffset, leftOffset] = getTopLeftOffset(currentPiece.shape);
+    const dropRow = r - topOffset;
+    const dropCol = c - leftOffset;
+
+    onDropPiece(dropRow, dropCol);
+  }
+
   return (
     <div className="board">
       {board.map((row, rowIndex) =>
         row.map((cell, colIndex) => {
           const cellClasses = ["cell"];
 
-          if (cell !== 0) {
+          if (cell < 0) {
+            cellClasses.push("exploding", `color-${Math.abs(cell)}`);
+          } else if (cell > 0) {
             cellClasses.push("filled", `color-${cell}`);
           } else if (isGhostCell(rowIndex, colIndex)) {
-            cellClasses.push("ghost");
+            cellClasses.push("ghost", `ghost-color-${currentPiece.colorId}`);
           }
 
           return (
@@ -48,17 +80,15 @@ function GameBoard({
               className={cellClasses.join(" ")}
               onDragOver={(e) => {
                 e.preventDefault();
-                if (!hoverCoords || hoverCoords[0] !== rowIndex || hoverCoords[1] !== colIndex) {
+                if (
+                  !hoverCoords ||
+                  hoverCoords[0] !== rowIndex ||
+                  hoverCoords[1] !== colIndex
+                ) {
                   setHoverCoords([rowIndex, colIndex]);
                 }
               }}
-
-              onDrop={() => {
-                if (hoverCoords && currentPiece) {
-                  const [r, c] = hoverCoords;
-                  onDropPiece(r, c);
-                }
-              }}
+              onDrop={() => handleDrop(rowIndex, colIndex)}
             />
           );
         })

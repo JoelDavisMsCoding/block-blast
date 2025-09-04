@@ -21,21 +21,49 @@
 }
 
 /* Filled cells (general) */
+/* 🎨 More realistic block styling */
 .cell.filled {
-  /* no default background-color here */
-  border: 1px solid #999; /* make them look "solid" */
+  border-radius: 5px;
+  box-shadow: inset -2px -2px 6px rgba(0,0,0,0.4),
+              inset 2px 2px 6px rgba(255,255,255,0.6),
+              0 2px 4px rgba(0,0,0,0.4);
+  transform: scale(0.98);
+  transition: transform 0.1s ease-in-out;
 }
+
+.cell.filled:hover {
+  transform: scale(1.1); /* small pop effect when hovered */
+}
+
+/* Add glossy shine overlay */
+.cell.filled::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  height: 40%;
+  pointer-events: none;
+}
+
 
 /* Ghost preview */
 .cell.ghost {
-  background-color: rgba(76, 175, 80, 0.35);
-  box-shadow: 0 0 8px 3px rgba(76, 175, 80, 0.6);
+  outline: 2px dashed rgba(0,0,0,0.3);
 }
+
+.ghost-color-1 { background-color: rgba(0, 128, 0, 0.5); }       /* green */
+.ghost-color-2 { background-color: rgba(0, 128, 255, 0.5); }     /* blue */
+.ghost-color-3 { background-color: rgba(255, 165, 0, 0.5); }     /* orange */
+.ghost-color-4 { background-color: rgba(128, 0, 128, 0.5); }     /* purple */
+.ghost-color-5 { background-color: rgba(255, 0, 0, 0.5); }       /* red */
+.ghost-color-6 { background-color: rgba(255, 215, 0, 0.5); }     /* gold */
+
 
 /* Piece colors */
 .cell.filled.color-1 { background-color: green !important; }
 .cell.filled.color-2 { background-color: rgb(0, 128, 255) !important; }
-.cell.filled.color-3 { background-color: orange !important; }
+.cell.filled.color-3 { background-color: darkorange !important; }
 .cell.filled.color-4 { background-color: purple !important; }
 .cell.filled.color-5 { background-color: red !important; }
 .cell.filled.color-6 { background-color: gold !important; }
@@ -49,7 +77,25 @@
   padding: 4px;
 }
 
-.available-piece .cell {
-  border: 1px solid transparent;
-  background-color: transparent;
+.available-piece .cell.filled {
+  opacity: 1; /* always fully visible */
+  background-clip: padding-box; /* ensures no transparency leaks */
+}
+
+.color-1 { background-color: green !important; }
+.color-2 { background-color: rgb(0, 128, 255) !important; }
+.color-3 { background-color: darkorange !important; }
+.color-4 { background-color: purple !important; }
+.color-5 { background-color: red !important; }
+.color-6 { background-color: gold !important; }
+
+.cell.exploding {
+  animation: explode 0.3s forwards;
+}
+
+
+@keyframes explode {
+  0%   { transform: scale(1); opacity: 1; box-shadow: 0 0 4px white; }
+  50%  { transform: scale(1.4); opacity: 0.7; box-shadow: 0 0 12px white; }
+  100% { transform: scale(0); opacity: 0; box-shadow: none; }
 }
