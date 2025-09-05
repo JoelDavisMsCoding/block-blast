@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import GameBoard from "./GameBoard";
 import { pieces } from "./pieces";
 import "./GameBoard.css";
@@ -16,6 +16,7 @@ function App() {
   const [draggedPieceIndex, setDraggedPieceIndex] = useState(null);
   const [gameOver, setGameOver] = useState(false);
 
+  // ---------- Piece Generation ----------
   function generateRandomPiece() {
     const shape = pieces[Math.floor(Math.random() * pieces.length)];
     const colorId = Math.floor(Math.random() * 6) + 1;
@@ -26,6 +27,7 @@ function App() {
     return [generateRandomPiece(), generateRandomPiece(), generateRandomPiece()];
   }
 
+  // ---------- Placement Logic ----------
   function canPlacePieceAt(row, col, piece) {
     if (!piece || !piece.shape) return false;
 
@@ -33,23 +35,20 @@ function App() {
     const rows = shape.length;
     const cols = shape[0].length;
 
-    // ✅ Quick rejection if piece doesn't fit on board
     if (row < 0 || col < 0 || row + rows > 8 || col + cols > 8) {
       return false;
     }
 
-    // ✅ Check each cell in the piece
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
         if (shape[i][j] === 1 && board[row + i][col + j] !== 0) {
-          return false; // Overlap with filled cell
+          return false;
         }
       }
     }
 
-    return true; // ✅ Valid placement
+    return true;
   }
-
 
   function placePiece(row, col, piece) {
     const newBoard = board.map((r) => [...r]);
@@ -64,62 +63,40 @@ function App() {
         }
       }
     }
-    clearLinesAnimated(newBoard, setBoard, (finalBoard) => {
-      setBoard(finalBoard);
-    });
+
     return newBoard;
   }
 
+  // ---------- Drop Piece ----------
   function onDropPiece(row, col) {
     if (draggedPieceIndex === null) return;
-
     const piece = availablePieces[draggedPieceIndex];
+    if (!piece || !canPlacePieceAt(row, col, piece)) return;
 
-    // ✅ Safety check
-    if (!piece || !canPlacePieceAt(row, col, piece)) {
-      return;
-    }
+    const placedBoard = placePiece(row, col, piece);
 
-    // Place the piece on the board
-    const newBoard = placePiece(row, col, piece);
-
-    // Scoring
+    // Base score from placed cells
     const placedCells = piece.shape.flat().filter((v) => v === 1).length;
-    const cleared = countClearedLines(board, newBoard);
-    const points = placedCells * 10 + cleared * 100;
-    setScore((prev) => prev + points);
+    setScore((prev) => prev + placedCells * 10);
 
-    // Update pieces: remove the one just placed
-    const updatedPieces = [...availablePieces];
-    updatedPieces[draggedPieceIndex] = null;
-    setAvailablePieces(updatedPieces);
-
-    // Reset drag state
     setIsDragging(false);
     setDraggedPieceIndex(null);
     setHoverCoords(null);
-    setBoard(newBoard);
 
-    // --- 🔑 Game over check ---
-    // 1. If there are still pieces left, check them
-    if (updatedPieces.some((p) => p)) {
-      if (!hasValidMoves(newBoard, updatedPieces)) {
-        triggerGameOver(newBoard);
+    // Clear lines first
+    clearLinesAnimated(placedBoard, setBoard, (finalBoard, clearedLines) => {
+      if (clearedLines > 0) {
+        setScore((prev) => prev + clearedLines * 100);
       }
-      return;
-    }
 
-    // 2. If all 3 pieces were used, generate a new set
-    const newPieces = generateThreePieces();
-    setAvailablePieces(newPieces);
-
-    // 3. Immediately check if new pieces are playable
-    if (!hasValidMoves(newBoard, newPieces)) {
-      triggerGameOver(newBoard);
-    }
+      // Remove the used piece
+      const updatedPieces = [...availablePieces];
+      updatedPieces[draggedPieceIndex] = null;
+      setAvailablePieces(updatedPieces);
+    });
   }
 
-
+  // ---------- Clear Lines Animation ----------
   function clearLinesAnimated(startBoard, setBoard, onFinish) {
     const newBoard = startBoard.map((r) => [...r]);
     let cellsToClear = [];
@@ -141,15 +118,15 @@ function App() {
     }
 
     if (cellsToClear.length === 0) {
-      onFinish(newBoard);
+      setBoard(newBoard);
+      onFinish(newBoard, 0);
       return;
     }
 
     let index = 0;
-
     function clearNext() {
       if (index >= cellsToClear.length) {
-        onFinish(newBoard);
+        onFinish(newBoard, 1);
         return;
       }
 
@@ -167,6 +144,7 @@ function App() {
     clearNext();
   }
 
+  // ---------- Explode Board Animation ----------
   function explodeBoardAnimated(startBoard, setBoard, onFinish) {
     const cells = [];
     for (let i = 0; i < 8; i++) {
@@ -197,6 +175,7 @@ function App() {
     explodeNext();
   }
 
+  // ---------- Game Over ----------
   function triggerGameOver(currentBoard) {
     setGameOver(true);
     setTimeout(() => {
@@ -209,50 +188,46 @@ function App() {
     }, 500);
   }
 
-  function countClearedLines(oldBoard, newBoard) {
-    let cleared = 0;
-
-    for (let i = 0; i < 8; i++) {
-      const oldRow = oldBoard[i].join("");
-      const newRow = newBoard[i].join("");
-      if (oldRow !== newRow && newRow === "00000000") {
-        cleared++;
-      }
-    }
-
-    for (let j = 0; j < 8; j++) {
-      const oldCol = oldBoard.map((row) => row[j]).join("");
-      const newCol = newBoard.map((row) => row[j]).join("");
-      if (oldCol !== newCol && newCol === "00000000") {
-        cleared++;
-      }
-    }
-    return cleared;
-  }
-
+  // ---------- Check for Valid Moves ----------
   function hasValidMoves(currentBoard, piecesList) {
     if (!Array.isArray(piecesList)) return false;
 
     for (const piece of piecesList) {
-      if (!piece || !piece.shape) continue; // ✅ skip null or broken pieces
-
+      if (!piece || !piece.shape) continue;
       const rows = piece.shape.length;
       const cols = piece.shape[0].length;
 
-      // Loop through all possible board positions
       for (let row = 0; row <= 8 - rows; row++) {
         for (let col = 0; col <= 8 - cols; col++) {
           if (canPlacePieceAt(row, col, piece)) {
-            return true; // ✅ Found at least one valid move
+            return true;
           }
         }
       }
     }
-
-    return false; // No moves for any piece
+    return false;
   }
 
+  // ---------- Auto-check Game Over whenever board/pieces change ----------
+  useEffect(() => {
+    if (gameOver) return;
 
+    const piecesExist = availablePieces.some((p) => p);
+    if (piecesExist) {
+      if (!hasValidMoves(board, availablePieces)) {
+        triggerGameOver(board);
+      }
+    } else {
+      const newPieces = generateThreePieces();
+      setAvailablePieces(newPieces);
+
+      if (!hasValidMoves(board, newPieces)) {
+        triggerGameOver(board);
+      }
+    }
+  }, [availablePieces, board, gameOver]);
+
+  // ---------- Render ----------
   return (
     <div className="App">
       <h1 style={{ fontSize: "1.5rem", textAlign: "center" }}>🧱 Block Blast</h1>
