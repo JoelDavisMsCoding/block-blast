@@ -1,6 +1,6 @@
 :root {
-  --cell-size: 40px;
-  --gap-size: 2px;
+  --cell-size: clamp(30px, 6vw, 70px); /* allow smaller min size for mobile */
+  --gap-size: clamp(2px, 0.8vw, 4px);
 }
 
 /* Base board + cells */
@@ -10,18 +10,28 @@
   gap: var(--gap-size);
   justify-content: center;
   padding: 10px;
+  box-sizing: border-box;
+  max-width: 100vw;   /* ✅ prevent horizontal overflow */
 }
 
 .cell {
   width: var(--cell-size);
   height: var(--cell-size);
   background-color: #ddd; /* empty cell */
-  border: 1px solid #ccc;
+  border: 1px solid black;
   box-sizing: border-box;
 }
 
+.pieces-container {
+  margin-top: 40px;
+  display: flex;
+  flex-wrap: wrap;     /* ✅ lets pieces wrap on small screens */
+  justify-content: center;
+  gap: 1rem;
+  max-width: 100%;
+}
+
 /* Filled cells (general) */
-/* 🎨 More realistic block styling */
 .cell.filled {
   border-radius: 5px;
   box-shadow: inset -2px -2px 6px rgba(0,0,0,0.4),
@@ -30,9 +40,8 @@
   transform: scale(0.98);
   transition: transform 0.1s ease-in-out;
 }
-
 .cell.filled:hover {
-  transform: scale(1.1); /* small pop effect when hovered */
+  transform: scale(1.1);
 }
 
 /* Add glossy shine overlay */
@@ -46,19 +55,16 @@
   pointer-events: none;
 }
 
-
 /* Ghost preview */
 .cell.ghost {
   outline: 2px dashed rgba(0,0,0,0.3);
 }
-
-.ghost-color-1 { background-color: rgba(0, 128, 0, 0.5); }       /* green */
-.ghost-color-2 { background-color: rgba(0, 128, 255, 0.5); }     /* blue */
-.ghost-color-3 { background-color: rgba(255, 165, 0, 0.5); }     /* orange */
-.ghost-color-4 { background-color: rgba(128, 0, 128, 0.5); }     /* purple */
-.ghost-color-5 { background-color: rgba(255, 0, 0, 0.5); }       /* red */
-.ghost-color-6 { background-color: rgba(255, 215, 0, 0.5); }     /* gold */
-
+.ghost-color-1 { background-color: rgba(0, 128, 0, 0.5); }
+.ghost-color-2 { background-color: rgba(0, 128, 255, 0.5); }
+.ghost-color-3 { background-color: rgba(255, 165, 0, 0.5); }
+.ghost-color-4 { background-color: rgba(128, 0, 128, 0.5); }
+.ghost-color-5 { background-color: rgba(255, 0, 0, 0.5); }
+.ghost-color-6 { background-color: rgba(255, 215, 0, 0.5); }
 
 /* Piece colors */
 .cell.filled.color-1 { background-color: green !important; }
@@ -75,11 +81,11 @@
   grid-auto-columns: var(--cell-size);
   gap: var(--gap-size);
   padding: 4px;
+  flex-shrink: 0; /* ✅ stop shrinking too small */
 }
-
 .available-piece .cell.filled {
-  opacity: 1; /* always fully visible */
-  background-clip: padding-box; /* ensures no transparency leaks */
+  opacity: 1;
+  background-clip: padding-box;
 }
 
 .color-1 { background-color: green !important; }
@@ -93,9 +99,31 @@
   animation: explode 0.3s forwards;
 }
 
-
 @keyframes explode {
   0%   { transform: scale(1); opacity: 1; box-shadow: 0 0 4px white; }
   50%  { transform: scale(1.4); opacity: 0.7; box-shadow: 0 0 12px white; }
   100% { transform: scale(0); opacity: 0; box-shadow: none; }
+}
+
+/* 📱 Mobile adjustments */
+@media (max-width: 600px) {
+  .board {
+    padding: 6px;
+  }
+  .pieces-container {
+    gap: 0.5rem;
+  }
+  .available-piece {
+    transform: scale(0.9); /* slightly smaller previews */
+  }
+}
+
+@media (max-width: 400px) {
+  :root {
+    --cell-size: clamp(24px, 7vw, 55px); /* shrink board for very small screens */
+  }
+  .pieces-container {
+    flex-direction: column; /* stack vertically */
+    align-items: center;
+  }
 }

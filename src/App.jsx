@@ -230,8 +230,8 @@ function App() {
   // ---------- Render ----------
   return (
     <div className="App">
-      <h1 style={{ fontSize: "1.5rem", textAlign: "center" }}>🧱 Block Blast</h1>
-      <h2 style={{ textAlign: "center" }}>Score: {score}</h2>
+      <h1 style={{ fontSize: "2rem", textAlign: "center" }}>🧱 Block Blast</h1>
+      <h2 style={{ fontSize: "2rem",textAlign: "center" }}>Score: {score}</h2>
 
       {gameOver && (
         <h2 style={{ textAlign: "center", color: "red" }}>Game Over!</h2>
@@ -248,7 +248,7 @@ function App() {
         }
       />
 
-      <h3 style={{ textAlign: "center" }}>Available Pieces:</h3>
+
       <div
         className="pieces-container"
         style={{
