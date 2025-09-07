@@ -225,6 +225,22 @@ function App() {
     }
   }, [availablePieces, board, gameOver]);
 
+  // ---------- Touch Handlers ----------
+  function handleTouchStart(index) {
+    setIsDragging(true);
+    setDraggedPieceIndex(index);
+  }
+
+  function handleTouchEnd(e) {
+    if (hoverCoords && draggedPieceIndex !== null) {
+      const [row, col] = hoverCoords;
+      onDropPiece(row, col);
+    }
+    setIsDragging(false);
+    setDraggedPieceIndex(null);
+    setHoverCoords(null);
+  }
+
   // ---------- Render ----------
   return (
     <div className="App">
@@ -268,18 +284,9 @@ function App() {
                 setDraggedPieceIndex(null);
                 setHoverCoords(null);
               }}
-              onClick={() => {
-                // ✅ Mobile tap to select
-                if (draggedPieceIndex === index) {
-                  setDraggedPieceIndex(null);
-                  setHoverCoords(null);
-                } else {
-                  setDraggedPieceIndex(index);
-                }
-              }}
-              className={`available-piece ${
-                draggedPieceIndex === index ? "selected" : ""
-              }`}
+              onTouchStart={() => handleTouchStart(index)}
+              onTouchEnd={handleTouchEnd}
+              className="available-piece"
               style={{
                 gridTemplateRows: `repeat(${piece.shape.length}, var(--cell-size))`,
                 gridTemplateColumns: `repeat(${piece.shape[0].length}, var(--cell-size))`,

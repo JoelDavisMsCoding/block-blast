@@ -78,16 +78,24 @@ function GameBoard({
               className={cellClasses.join(" ")}
               onDragOver={(e) => {
                 e.preventDefault();
-                if (
-                  !hoverCoords ||
-                  hoverCoords[0] !== rowIndex ||
-                  hoverCoords[1] !== colIndex
-                ) {
-                  setHoverCoords([rowIndex, colIndex]);
-                }
+                setHoverCoords([rowIndex, colIndex]);
               }}
               onDrop={() => handleDrop(rowIndex, colIndex)}
-              onClick={() => handleDrop(rowIndex, colIndex)} // ✅ Mobile tap place
+              onTouchMove={(e) => {
+                const touch = e.touches[0];
+                const target = document.elementFromPoint(
+                  touch.clientX,
+                  touch.clientY
+                );
+                if (target && target.dataset.row && target.dataset.col) {
+                  setHoverCoords([
+                    parseInt(target.dataset.row, 10),
+                    parseInt(target.dataset.col, 10),
+                  ]);
+                }
+              }}
+              data-row={rowIndex}
+              data-col={colIndex}
             />
           );
         })
