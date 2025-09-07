@@ -274,7 +274,13 @@ function App() {
           piece ? (
             <div
               key={index}
-              draggable
+              className="available-piece"
+              style={{
+                gridTemplateRows: `repeat(${piece.shape.length}, var(--cell-size))`,
+                gridTemplateColumns: `repeat(${piece.shape[0].length}, var(--cell-size))`,
+                touchAction: "none", // 👈 prevents scrolling while dragging on mobile
+              }}
+              draggable // works for mouse
               onDragStart={() => {
                 setIsDragging(true);
                 setDraggedPieceIndex(index);
@@ -284,12 +290,19 @@ function App() {
                 setDraggedPieceIndex(null);
                 setHoverCoords(null);
               }}
-              onTouchStart={() => handleTouchStart(index)}
-              onTouchEnd={handleTouchEnd}
-              className="available-piece"
-              style={{
-                gridTemplateRows: `repeat(${piece.shape.length}, var(--cell-size))`,
-                gridTemplateColumns: `repeat(${piece.shape[0].length}, var(--cell-size))`,
+              // 👇 mobile/touch pointer events
+              onPointerDown={() => {
+                setIsDragging(true);
+                setDraggedPieceIndex(index);
+              }}
+              onPointerUp={() => {
+                if (hoverCoords && draggedPieceIndex !== null) {
+                  const [row, col] = hoverCoords;
+                  onDropPiece(row, col);
+                }
+                setIsDragging(false);
+                setDraggedPieceIndex(null);
+                setHoverCoords(null);
               }}
             >
               {piece.shape.map((row, i) =>
@@ -299,15 +312,14 @@ function App() {
                     className={`cell ${
                       cell === 1 ? `filled color-${piece.colorId}` : ""
                     }`}
-                    style={{
-                      visibility: cell === 1 ? "visible" : "hidden",
-                    }}
+                    style={{ visibility: cell === 1 ? "visible" : "hidden" }}
                   />
                 ))
               )}
             </div>
           ) : null
         )}
+
       </div>
     </div>
   );

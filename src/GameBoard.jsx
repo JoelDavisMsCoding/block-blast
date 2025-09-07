@@ -82,11 +82,15 @@ function GameBoard({
               }}
               onDrop={() => handleDrop(rowIndex, colIndex)}
               onTouchMove={(e) => {
+                e.preventDefault(); // 👈 stops page from scrolling while dragging
                 const touch = e.touches[0];
+                if (!touch) return;
+
                 const target = document.elementFromPoint(
                   touch.clientX,
                   touch.clientY
                 );
+
                 if (target && target.dataset.row && target.dataset.col) {
                   setHoverCoords([
                     parseInt(target.dataset.row, 10),
@@ -97,6 +101,7 @@ function GameBoard({
               data-row={rowIndex}
               data-col={colIndex}
             />
+
           );
         })
       )}
