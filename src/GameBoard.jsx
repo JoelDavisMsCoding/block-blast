@@ -76,31 +76,34 @@ function GameBoard({
             <div
               key={`${rowIndex}-${colIndex}`}
               className={cellClasses.join(" ")}
+              data-row={rowIndex}
+              data-col={colIndex}
               onDragOver={(e) => {
                 e.preventDefault();
                 setHoverCoords([rowIndex, colIndex]);
               }}
               onDrop={() => handleDrop(rowIndex, colIndex)}
               onTouchMove={(e) => {
-                e.preventDefault(); // 👈 stops page from scrolling while dragging
+                e.preventDefault(); // stop scrolling
                 const touch = e.touches[0];
                 if (!touch) return;
 
-                const target = document.elementFromPoint(
-                  touch.clientX,
-                  touch.clientY
-                );
+                const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (!target) return;
 
-                if (target && target.dataset.row && target.dataset.col) {
-                  setHoverCoords([
-                    parseInt(target.dataset.row, 10),
-                    parseInt(target.dataset.col, 10),
-                  ]);
+                const row = target.dataset.row;
+                const col = target.dataset.col;
+                if (row !== undefined && col !== undefined) {
+                  setHoverCoords([parseInt(row, 10), parseInt(col, 10)]);
                 }
               }}
-              data-row={rowIndex}
-              data-col={colIndex}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                if (!hoverCoords) return;
+                handleDrop(hoverCoords[0], hoverCoords[1]);
+              }}
             />
+
 
           );
         })

@@ -271,54 +271,50 @@ function App() {
         }}
       >
         {availablePieces.map((piece, index) =>
-          piece ? (
-            <div
-              key={index}
-              className="available-piece"
-              style={{
-                gridTemplateRows: `repeat(${piece.shape.length}, var(--cell-size))`,
-                gridTemplateColumns: `repeat(${piece.shape[0].length}, var(--cell-size))`,
-                touchAction: "none", // 👈 prevents scrolling while dragging on mobile
-              }}
-              draggable // works for mouse
-              onDragStart={() => {
-                setIsDragging(true);
-                setDraggedPieceIndex(index);
-              }}
-              onDragEnd={() => {
-                setIsDragging(false);
-                setDraggedPieceIndex(null);
-                setHoverCoords(null);
-              }}
-              // 👇 mobile/touch pointer events
-              onPointerDown={() => {
-                setIsDragging(true);
-                setDraggedPieceIndex(index);
-              }}
-              onPointerUp={() => {
-                if (hoverCoords && draggedPieceIndex !== null) {
-                  const [row, col] = hoverCoords;
-                  onDropPiece(row, col);
-                }
-                setIsDragging(false);
-                setDraggedPieceIndex(null);
-                setHoverCoords(null);
-              }}
-            >
-              {piece.shape.map((row, i) =>
-                row.map((cell, j) => (
-                  <div
-                    key={`${i}-${j}`}
-                    className={`cell ${
-                      cell === 1 ? `filled color-${piece.colorId}` : ""
-                    }`}
-                    style={{ visibility: cell === 1 ? "visible" : "hidden" }}
-                  />
-                ))
-              )}
-            </div>
-          ) : null
-        )}
+        piece ? (
+          <div
+            key={index}
+            className="available-piece"
+            onDragStart={() => {
+              setIsDragging(true);
+              setDraggedPieceIndex(index);
+            }}
+            onDragEnd={() => {
+              setIsDragging(false);
+              setDraggedPieceIndex(null);
+              setHoverCoords(null);
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+              setDraggedPieceIndex(index);
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              setDraggedPieceIndex(null);
+              setHoverCoords(null);
+            }}
+            style={{
+              gridTemplateRows: `repeat(${piece.shape.length}, var(--cell-size))`,
+              gridTemplateColumns: `repeat(${piece.shape[0].length}, var(--cell-size))`,
+            }}
+          >
+            {piece.shape.map((row, i) =>
+              row.map((cell, j) => (
+                <div
+                  key={`${i}-${j}`}
+                  className={`cell ${cell === 1 ? `filled color-${piece.colorId}` : ""}`}
+                  style={{
+                    visibility: cell === 1 ? "visible" : "hidden",
+                  }}
+                />
+              ))
+            )}
+          </div>
+
+        ) : null
+      )}
 
       </div>
     </div>
