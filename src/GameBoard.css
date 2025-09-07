@@ -123,7 +123,6 @@
     --cell-size: clamp(24px, 7vw, 55px); /* shrink board for very small screens */
   }
   .pieces-container {
-    flex-direction: column; /* stack vertically */
     align-items: center;
   }
 }

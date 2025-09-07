@@ -1,8 +1,6 @@
-// GameBoard.jsx
 import React from "react";
 import "./GameBoard.css";
 
-// Helper: find top-left filled cell of a piece
 function getTopLeftOffset(shape) {
   let top = null;
   let left = null;
@@ -89,6 +87,7 @@ function GameBoard({
                 }
               }}
               onDrop={() => handleDrop(rowIndex, colIndex)}
+              onClick={() => handleDrop(rowIndex, colIndex)} // ✅ Mobile tap place
             />
           );
         })

@@ -46,7 +46,6 @@ function App() {
         }
       }
     }
-
     return true;
   }
 
@@ -63,7 +62,6 @@ function App() {
         }
       }
     }
-
     return newBoard;
   }
 
@@ -75,7 +73,7 @@ function App() {
 
     const placedBoard = placePiece(row, col, piece);
 
-    // Base score from placed cells
+    // Score from placed cells
     const placedCells = piece.shape.flat().filter((v) => v === 1).length;
     setScore((prev) => prev + placedCells * 10);
 
@@ -83,7 +81,7 @@ function App() {
     setDraggedPieceIndex(null);
     setHoverCoords(null);
 
-    // Clear lines first
+    // Clear lines
     clearLinesAnimated(placedBoard, setBoard, (finalBoard, clearedLines) => {
       if (clearedLines > 0) {
         setScore((prev) => prev + clearedLines * 100);
@@ -208,7 +206,7 @@ function App() {
     return false;
   }
 
-  // ---------- Auto-check Game Over whenever board/pieces change ----------
+  // ---------- Auto-check Game Over ----------
   useEffect(() => {
     if (gameOver) return;
 
@@ -231,7 +229,7 @@ function App() {
   return (
     <div className="App">
       <h1 style={{ fontSize: "2rem", textAlign: "center" }}>🧱 Block Blast</h1>
-      <h2 style={{ fontSize: "2rem",textAlign: "center" }}>Score: {score}</h2>
+      <h2 style={{ fontSize: "2rem", textAlign: "center" }}>Score: {score}</h2>
 
       {gameOver && (
         <h2 style={{ textAlign: "center", color: "red" }}>Game Over!</h2>
@@ -247,7 +245,6 @@ function App() {
           draggedPieceIndex !== null ? availablePieces[draggedPieceIndex] : null
         }
       />
-
 
       <div
         className="pieces-container"
@@ -271,7 +268,18 @@ function App() {
                 setDraggedPieceIndex(null);
                 setHoverCoords(null);
               }}
-              className="available-piece"
+              onClick={() => {
+                // ✅ Mobile tap to select
+                if (draggedPieceIndex === index) {
+                  setDraggedPieceIndex(null);
+                  setHoverCoords(null);
+                } else {
+                  setDraggedPieceIndex(index);
+                }
+              }}
+              className={`available-piece ${
+                draggedPieceIndex === index ? "selected" : ""
+              }`}
               style={{
                 gridTemplateRows: `repeat(${piece.shape.length}, var(--cell-size))`,
                 gridTemplateColumns: `repeat(${piece.shape[0].length}, var(--cell-size))`,
