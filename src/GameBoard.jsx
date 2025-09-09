@@ -19,7 +19,7 @@ function getTopLeftOffset(shape) {
 
 function GameBoard({
   board,
-  onDropPiece, // kept for API parity (drop now handled globally)
+  onDropPiece,
   canPlacePieceAt,
   hoverCoords,
   setHoverCoords,
@@ -37,12 +37,25 @@ function GameBoard({
 
     for (let i = 0; i < shape.length; i++) {
       for (let j = 0; j < shape[i].length; j++) {
-        if (shape[i][j] === 1 && r === baseRow + i && c === baseCol + j) {
+        if (
+          shape[i][j] === 1 &&
+          r === baseRow + i &&
+          c === baseCol + j
+        ) {
           return true;
         }
       }
     }
     return false;
+  }
+
+  function handleDrop(r, c) {
+    if (!currentPiece) return;
+    const [topOffset, leftOffset] = getTopLeftOffset(currentPiece.shape);
+    const dropRow = r - topOffset;
+    const dropCol = c - leftOffset;
+
+    onDropPiece(dropRow, dropCol);
   }
 
   return (
@@ -65,8 +78,11 @@ function GameBoard({
               className={cellClasses.join(" ")}
               data-row={rowIndex}
               data-col={colIndex}
-              // We no longer use per-cell drag/touch handlers; hoverCoords is
-              // updated globally in App via elementFromPoint()
+              onDragOver={(e) => {
+                e.preventDefault();
+                setHoverCoords([rowIndex, colIndex]);
+              }}
+              onDrop={() => handleDrop(rowIndex, colIndex)}
             />
           );
         })

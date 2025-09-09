@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import GameBoard from "./GameBoard";
 import { pieces } from "./pieces";
 import "./GameBoard.css";
@@ -14,6 +14,7 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [hoverCoords, setHoverCoords] = useState(null);
   const [draggedPieceIndex, setDraggedPieceIndex] = useState(null);
+  const [dragPosition, setDragPosition] = useState(null); // 👈 new
   const [gameOver, setGameOver] = useState(false);
 
   // ---------- Piece Generation ----------
@@ -22,47 +23,33 @@ function App() {
     const colorId = Math.floor(Math.random() * 6) + 1;
     return { shape, colorId };
   }
+
   function generateThreePieces() {
     return [generateRandomPiece(), generateRandomPiece(), generateRandomPiece()];
   }
 
-  // ---------- Helpers ----------
-  function getTopLeftOffset(shape) {
-    let top = null;
-    let left = null;
-    for (let i = 0; i < shape.length; i++) {
-      for (let j = 0; j < shape[i].length; j++) {
-        if (shape[i][j] === 1) {
-          if (top === null || i < top) top = i;
-          if (left === null || j < left) left = j;
+  // ---------- Placement Logic ----------
+  function canPlacePieceAt(row, col, piece) {
+    if (!piece || !piece.shape) return false;
+
+    const { shape } = piece;
+    const rows = shape.length;
+    const cols = shape[0].length;
+
+    if (row < 0 || col < 0 || row + rows > 8 || col + cols > 8) {
+      return false;
+    }
+
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        if (shape[i][j] === 1 && board[row + i][col + j] !== 0) {
+          return false;
         }
       }
     }
-    return [top || 0, left || 0];
+
+    return true;
   }
-
-  // ---------- Placement Logic ----------
-  const canPlacePieceAt = useCallback(
-    (row, col, piece) => {
-      if (!piece || !piece.shape) return false;
-      const { shape } = piece;
-      const rows = shape.length;
-      const cols = shape[0].length;
-
-      if (row < 0 || col < 0 || row + rows > 8 || col + cols > 8) {
-        return false;
-      }
-      for (let i = 0; i < rows; i++) {
-        for (let j = 0; j < cols; j++) {
-          if (shape[i][j] === 1 && board[row + i][col + j] !== 0) {
-            return false;
-          }
-        }
-      }
-      return true;
-    },
-    [board]
-  );
 
   function placePiece(row, col, piece) {
     const newBoard = board.map((r) => [...r]);
@@ -77,40 +64,35 @@ function App() {
         }
       }
     }
+
     return newBoard;
   }
 
   // ---------- Drop Piece ----------
-  const onDropPiece = useCallback(
-    (row, col) => {
-      if (draggedPieceIndex === null) return;
-      const piece = availablePieces[draggedPieceIndex];
-      if (!piece || !canPlacePieceAt(row, col, piece)) return;
+  function onDropPiece(row, col) {
+    if (draggedPieceIndex === null) return;
+    const piece = availablePieces[draggedPieceIndex];
+    if (!piece || !canPlacePieceAt(row, col, piece)) return;
 
-      const placedBoard = placePiece(row, col, piece);
+    const placedBoard = placePiece(row, col, piece);
 
-      // Base score from placed cells
-      const placedCells = piece.shape.flat().filter((v) => v === 1).length;
-      setScore((prev) => prev + placedCells * 10);
+    const placedCells = piece.shape.flat().filter((v) => v === 1).length;
+    setScore((prev) => prev + placedCells * 10);
 
-      setIsDragging(false);
-      setDraggedPieceIndex(null);
-      setHoverCoords(null);
+    setIsDragging(false);
+    setDraggedPieceIndex(null);
+    setHoverCoords(null);
+    setDragPosition(null);
 
-      // Clear lines first
-      clearLinesAnimated(placedBoard, setBoard, (finalBoard, clearedLines) => {
-        if (clearedLines > 0) {
-          setScore((prev) => prev + clearedLines * 100);
-        }
-
-        // Remove the used piece
-        const updatedPieces = [...availablePieces];
-        updatedPieces[draggedPieceIndex] = null;
-        setAvailablePieces(updatedPieces);
-      });
-    },
-    [availablePieces, draggedPieceIndex, canPlacePieceAt] // board is captured via helpers
-  );
+    clearLinesAnimated(placedBoard, setBoard, (finalBoard, clearedLines) => {
+      if (clearedLines > 0) {
+        setScore((prev) => prev + clearedLines * 100);
+      }
+      const updatedPieces = [...availablePieces];
+      updatedPieces[draggedPieceIndex] = null;
+      setAvailablePieces(updatedPieces);
+    });
+  }
 
   // ---------- Clear Lines Animation ----------
   function clearLinesAnimated(startBoard, setBoard, onFinish) {
@@ -119,12 +101,17 @@ function App() {
 
     for (let i = 0; i < 8; i++) {
       if (newBoard[i].every((cell) => cell !== 0)) {
-        for (let j = 0; j < 8; j++) cellsToClear.push([i, j, newBoard[i][j]]);
+        for (let j = 0; j < 8; j++) {
+          cellsToClear.push([i, j, newBoard[i][j]]);
+        }
       }
     }
+
     for (let j = 0; j < 8; j++) {
       if (newBoard.every((row) => row[j] !== 0)) {
-        for (let i = 0; i < 8; i++) cellsToClear.push([i, j, newBoard[i][j]]);
+        for (let i = 0; i < 8; i++) {
+          cellsToClear.push([i, j, newBoard[i][j]]);
+        }
       }
     }
 
@@ -140,6 +127,7 @@ function App() {
         onFinish(newBoard, 1);
         return;
       }
+
       const [r, c, colorId] = cellsToClear[index];
       newBoard[r][c] = -Math.abs(colorId);
       setBoard(newBoard.map((row) => [...row]));
@@ -159,7 +147,9 @@ function App() {
     const cells = [];
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
-        if (startBoard[i][j] !== 0) cells.push([i, j, startBoard[i][j]]);
+        if (startBoard[i][j] !== 0) {
+          cells.push([i, j, startBoard[i][j]]);
+        }
       }
     }
 
@@ -207,7 +197,9 @@ function App() {
 
       for (let row = 0; row <= 8 - rows; row++) {
         for (let col = 0; col <= 8 - cols; col++) {
-          if (canPlacePieceAt(row, col, piece)) return true;
+          if (canPlacePieceAt(row, col, piece)) {
+            return true;
+          }
         }
       }
     }
@@ -233,16 +225,17 @@ function App() {
     }
   }, [availablePieces, board, gameOver]);
 
-  // ---------- Global pointer tracking (mouse + touch) ----------
+  // ---------- Global pointer handlers ----------
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMove = (e) => {
       const point = e.touches ? e.touches[0] : e;
       if (!point) return;
+      setDragPosition({ x: point.clientX, y: point.clientY });
+
       const el = document.elementFromPoint(point.clientX, point.clientY);
       if (!el) return;
-
       const row = el.dataset?.row;
       const col = el.dataset?.col;
       if (row !== undefined && col !== undefined) {
@@ -253,32 +246,34 @@ function App() {
     };
 
     const handleUp = () => {
-      const piece =
-        draggedPieceIndex !== null ? availablePieces[draggedPieceIndex] : null;
-      if (piece && hoverCoords) {
-        const [topOffset, leftOffset] = getTopLeftOffset(piece.shape);
-        const dropRow = hoverCoords[0] - topOffset;
-        const dropCol = hoverCoords[1] - leftOffset;
-        onDropPiece(dropRow, dropCol);
+      if (draggedPieceIndex !== null && hoverCoords) {
+        const piece = availablePieces[draggedPieceIndex];
+        if (piece) {
+          const rows = piece.shape.length;
+          const cols = piece.shape[0].length;
+          const dropRow = hoverCoords[0];
+          const dropCol = hoverCoords[1];
+          onDropPiece(dropRow, dropCol);
+        }
       }
       setIsDragging(false);
       setDraggedPieceIndex(null);
       setHoverCoords(null);
+      setDragPosition(null);
     };
 
-    // Pointer Events (modern) + Touch fallback
-    window.addEventListener("pointermove", handleMove, { passive: true });
-    window.addEventListener("pointerup", handleUp, { passive: true });
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
     window.addEventListener("touchmove", handleMove, { passive: false });
-    window.addEventListener("touchend", handleUp, { passive: true });
+    window.addEventListener("touchend", handleUp);
 
     return () => {
-      window.removeEventListener("pointermove", handleMove);
-      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
       window.removeEventListener("touchmove", handleMove);
       window.removeEventListener("touchend", handleUp);
     };
-  }, [isDragging, draggedPieceIndex, availablePieces, hoverCoords, onDropPiece]);
+  }, [isDragging, draggedPieceIndex, hoverCoords]);
 
   // ---------- Render ----------
   return (
@@ -313,16 +308,20 @@ function App() {
           piece ? (
             <div
               key={index}
-              // We rely on pointer events instead of HTML5 drag on all devices:
-              draggable={false}
-              onPointerDown={(e) => {
-                e.preventDefault();
+              draggable
+              onDragStart={() => {
                 setIsDragging(true);
                 setDraggedPieceIndex(index);
               }}
-              onPointerUp={(e) => {
-                e.preventDefault();
-                // If user releases before moving onto the board, this will be handled by global handler.
+              onTouchStart={() => {
+                setIsDragging(true);
+                setDraggedPieceIndex(index);
+              }}
+              onDragEnd={() => {
+                setIsDragging(false);
+                setDraggedPieceIndex(null);
+                setHoverCoords(null);
+                setDragPosition(null);
               }}
               className="available-piece"
               style={{
@@ -347,6 +346,40 @@ function App() {
           ) : null
         )}
       </div>
+
+      {/* 👇 Floating overlay while dragging */}
+      {isDragging && draggedPieceIndex !== null && dragPosition && (
+        <div
+          className="drag-overlay"
+          style={{
+            position: "fixed",
+            left: dragPosition.x + 10,
+            top: dragPosition.y + 10,
+            pointerEvents: "none",
+            zIndex: 9999,
+            display: "grid",
+            gridTemplateRows: `repeat(${availablePieces[draggedPieceIndex].shape.length}, var(--cell-size))`,
+            gridTemplateColumns: `repeat(${availablePieces[draggedPieceIndex].shape[0].length}, var(--cell-size))`,
+            gap: "var(--gap-size)",
+            opacity: 0.8,
+            transform: "scale(0.9)",
+          }}
+        >
+          {availablePieces[draggedPieceIndex].shape.map((row, i) =>
+            row.map((cell, j) => (
+              <div
+                key={`${i}-${j}`}
+                className={`cell ${
+                  cell === 1
+                    ? `filled color-${availablePieces[draggedPieceIndex].colorId}`
+                    : ""
+                }`}
+                style={{ visibility: cell === 1 ? "visible" : "hidden" }}
+              />
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -101,6 +101,12 @@
   animation: explode 0.3s forwards;
 }
 
+.drag-overlay {
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+  transition: transform 0.05s;
+}
+
+
 @keyframes explode {
   0%   { transform: scale(1); opacity: 1; box-shadow: 0 0 4px white; }
   50%  { transform: scale(1.4); opacity: 0.7; box-shadow: 0 0 12px white; }
