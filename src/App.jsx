@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import GameBoard from "./GameBoard";
 import { pieces } from "./pieces";
 import "./GameBoard.css";
@@ -22,33 +22,47 @@ function App() {
     const colorId = Math.floor(Math.random() * 6) + 1;
     return { shape, colorId };
   }
-
   function generateThreePieces() {
     return [generateRandomPiece(), generateRandomPiece(), generateRandomPiece()];
   }
 
-  // ---------- Placement Logic ----------
-  function canPlacePieceAt(row, col, piece) {
-    if (!piece || !piece.shape) return false;
-
-    const { shape } = piece;
-    const rows = shape.length;
-    const cols = shape[0].length;
-
-    if (row < 0 || col < 0 || row + rows > 8 || col + cols > 8) {
-      return false;
-    }
-
-    for (let i = 0; i < rows; i++) {
-      for (let j = 0; j < cols; j++) {
-        if (shape[i][j] === 1 && board[row + i][col + j] !== 0) {
-          return false;
+  // ---------- Helpers ----------
+  function getTopLeftOffset(shape) {
+    let top = null;
+    let left = null;
+    for (let i = 0; i < shape.length; i++) {
+      for (let j = 0; j < shape[i].length; j++) {
+        if (shape[i][j] === 1) {
+          if (top === null || i < top) top = i;
+          if (left === null || j < left) left = j;
         }
       }
     }
-
-    return true;
+    return [top || 0, left || 0];
   }
+
+  // ---------- Placement Logic ----------
+  const canPlacePieceAt = useCallback(
+    (row, col, piece) => {
+      if (!piece || !piece.shape) return false;
+      const { shape } = piece;
+      const rows = shape.length;
+      const cols = shape[0].length;
+
+      if (row < 0 || col < 0 || row + rows > 8 || col + cols > 8) {
+        return false;
+      }
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          if (shape[i][j] === 1 && board[row + i][col + j] !== 0) {
+            return false;
+          }
+        }
+      }
+      return true;
+    },
+    [board]
+  );
 
   function placePiece(row, col, piece) {
     const newBoard = board.map((r) => [...r]);
@@ -63,38 +77,40 @@ function App() {
         }
       }
     }
-
     return newBoard;
   }
 
   // ---------- Drop Piece ----------
-  function onDropPiece(row, col) {
-    if (draggedPieceIndex === null) return;
-    const piece = availablePieces[draggedPieceIndex];
-    if (!piece || !canPlacePieceAt(row, col, piece)) return;
+  const onDropPiece = useCallback(
+    (row, col) => {
+      if (draggedPieceIndex === null) return;
+      const piece = availablePieces[draggedPieceIndex];
+      if (!piece || !canPlacePieceAt(row, col, piece)) return;
 
-    const placedBoard = placePiece(row, col, piece);
+      const placedBoard = placePiece(row, col, piece);
 
-    // Base score from placed cells
-    const placedCells = piece.shape.flat().filter((v) => v === 1).length;
-    setScore((prev) => prev + placedCells * 10);
+      // Base score from placed cells
+      const placedCells = piece.shape.flat().filter((v) => v === 1).length;
+      setScore((prev) => prev + placedCells * 10);
 
-    setIsDragging(false);
-    setDraggedPieceIndex(null);
-    setHoverCoords(null);
+      setIsDragging(false);
+      setDraggedPieceIndex(null);
+      setHoverCoords(null);
 
-    // Clear lines first
-    clearLinesAnimated(placedBoard, setBoard, (finalBoard, clearedLines) => {
-      if (clearedLines > 0) {
-        setScore((prev) => prev + clearedLines * 100);
-      }
+      // Clear lines first
+      clearLinesAnimated(placedBoard, setBoard, (finalBoard, clearedLines) => {
+        if (clearedLines > 0) {
+          setScore((prev) => prev + clearedLines * 100);
+        }
 
-      // Remove the used piece
-      const updatedPieces = [...availablePieces];
-      updatedPieces[draggedPieceIndex] = null;
-      setAvailablePieces(updatedPieces);
-    });
-  }
+        // Remove the used piece
+        const updatedPieces = [...availablePieces];
+        updatedPieces[draggedPieceIndex] = null;
+        setAvailablePieces(updatedPieces);
+      });
+    },
+    [availablePieces, draggedPieceIndex, canPlacePieceAt] // board is captured via helpers
+  );
 
   // ---------- Clear Lines Animation ----------
   function clearLinesAnimated(startBoard, setBoard, onFinish) {
@@ -103,17 +119,12 @@ function App() {
 
     for (let i = 0; i < 8; i++) {
       if (newBoard[i].every((cell) => cell !== 0)) {
-        for (let j = 0; j < 8; j++) {
-          cellsToClear.push([i, j, newBoard[i][j]]);
-        }
+        for (let j = 0; j < 8; j++) cellsToClear.push([i, j, newBoard[i][j]]);
       }
     }
-
     for (let j = 0; j < 8; j++) {
       if (newBoard.every((row) => row[j] !== 0)) {
-        for (let i = 0; i < 8; i++) {
-          cellsToClear.push([i, j, newBoard[i][j]]);
-        }
+        for (let i = 0; i < 8; i++) cellsToClear.push([i, j, newBoard[i][j]]);
       }
     }
 
@@ -129,7 +140,6 @@ function App() {
         onFinish(newBoard, 1);
         return;
       }
-
       const [r, c, colorId] = cellsToClear[index];
       newBoard[r][c] = -Math.abs(colorId);
       setBoard(newBoard.map((row) => [...row]));
@@ -149,9 +159,7 @@ function App() {
     const cells = [];
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
-        if (startBoard[i][j] !== 0) {
-          cells.push([i, j, startBoard[i][j]]);
-        }
+        if (startBoard[i][j] !== 0) cells.push([i, j, startBoard[i][j]]);
       }
     }
 
@@ -199,9 +207,7 @@ function App() {
 
       for (let row = 0; row <= 8 - rows; row++) {
         for (let col = 0; col <= 8 - cols; col++) {
-          if (canPlacePieceAt(row, col, piece)) {
-            return true;
-          }
+          if (canPlacePieceAt(row, col, piece)) return true;
         }
       }
     }
@@ -227,11 +233,58 @@ function App() {
     }
   }, [availablePieces, board, gameOver]);
 
+  // ---------- Global pointer tracking (mouse + touch) ----------
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMove = (e) => {
+      const point = e.touches ? e.touches[0] : e;
+      if (!point) return;
+      const el = document.elementFromPoint(point.clientX, point.clientY);
+      if (!el) return;
+
+      const row = el.dataset?.row;
+      const col = el.dataset?.col;
+      if (row !== undefined && col !== undefined) {
+        setHoverCoords([parseInt(row, 10), parseInt(col, 10)]);
+      } else {
+        setHoverCoords(null);
+      }
+    };
+
+    const handleUp = () => {
+      const piece =
+        draggedPieceIndex !== null ? availablePieces[draggedPieceIndex] : null;
+      if (piece && hoverCoords) {
+        const [topOffset, leftOffset] = getTopLeftOffset(piece.shape);
+        const dropRow = hoverCoords[0] - topOffset;
+        const dropCol = hoverCoords[1] - leftOffset;
+        onDropPiece(dropRow, dropCol);
+      }
+      setIsDragging(false);
+      setDraggedPieceIndex(null);
+      setHoverCoords(null);
+    };
+
+    // Pointer Events (modern) + Touch fallback
+    window.addEventListener("pointermove", handleMove, { passive: true });
+    window.addEventListener("pointerup", handleUp, { passive: true });
+    window.addEventListener("touchmove", handleMove, { passive: false });
+    window.addEventListener("touchend", handleUp, { passive: true });
+
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleUp);
+    };
+  }, [isDragging, draggedPieceIndex, availablePieces, hoverCoords, onDropPiece]);
+
   // ---------- Render ----------
   return (
     <div className="App">
       <h1 style={{ fontSize: "2rem", textAlign: "center" }}>🧱 Block Blast</h1>
-      <h2 style={{ fontSize: "2rem",textAlign: "center" }}>Score: {score}</h2>
+      <h2 style={{ fontSize: "2rem", textAlign: "center" }}>Score: {score}</h2>
 
       {gameOver && (
         <h2 style={{ textAlign: "center", color: "red" }}>Game Over!</h2>
@@ -248,7 +301,6 @@ function App() {
         }
       />
 
-
       <div
         className="pieces-container"
         style={{
@@ -261,26 +313,16 @@ function App() {
           piece ? (
             <div
               key={index}
-              draggable
-              onDragStart={() => {
-                setIsDragging(true);
-                setDraggedPieceIndex(index);
-              }}
-              onDragEnd={() => {
-                setIsDragging(false);
-                setDraggedPieceIndex(null);
-                setHoverCoords(null);
-              }}
-              onTouchStart={(e) => {
+              // We rely on pointer events instead of HTML5 drag on all devices:
+              draggable={false}
+              onPointerDown={(e) => {
                 e.preventDefault();
                 setIsDragging(true);
                 setDraggedPieceIndex(index);
               }}
-              onTouchEnd={(e) => {
+              onPointerUp={(e) => {
                 e.preventDefault();
-                setIsDragging(false);
-                setDraggedPieceIndex(null);
-                setHoverCoords(null);
+                // If user releases before moving onto the board, this will be handled by global handler.
               }}
               className="available-piece"
               style={{
@@ -304,7 +346,6 @@ function App() {
             </div>
           ) : null
         )}
-
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ function getTopLeftOffset(shape) {
 
 function GameBoard({
   board,
-  onDropPiece,
+  onDropPiece, // kept for API parity (drop now handled globally)
   canPlacePieceAt,
   hoverCoords,
   setHoverCoords,
@@ -37,25 +37,12 @@ function GameBoard({
 
     for (let i = 0; i < shape.length; i++) {
       for (let j = 0; j < shape[i].length; j++) {
-        if (
-          shape[i][j] === 1 &&
-          r === baseRow + i &&
-          c === baseCol + j
-        ) {
+        if (shape[i][j] === 1 && r === baseRow + i && c === baseCol + j) {
           return true;
         }
       }
     }
     return false;
-  }
-
-  function handleDrop(r, c) {
-    if (!currentPiece) return;
-    const [topOffset, leftOffset] = getTopLeftOffset(currentPiece.shape);
-    const dropRow = r - topOffset;
-    const dropCol = c - leftOffset;
-
-    onDropPiece(dropRow, dropCol);
   }
 
   return (
@@ -78,34 +65,9 @@ function GameBoard({
               className={cellClasses.join(" ")}
               data-row={rowIndex}
               data-col={colIndex}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setHoverCoords([rowIndex, colIndex]);
-              }}
-              onDrop={() => handleDrop(rowIndex, colIndex)}
-              onTouchMove={(e) => {
-                e.preventDefault(); // stop scrolling while dragging
-                const touch = e.touches[0];
-                if (!touch) return;
-
-                const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                if (!target) return;
-
-                const row = target.dataset.row;
-                const col = target.dataset.col;
-                if (row !== undefined && col !== undefined) {
-                  setHoverCoords([parseInt(row, 10), parseInt(col, 10)]);
-                }
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                if (!hoverCoords) return;
-                handleDrop(hoverCoords[0], hoverCoords[1]);
-              }}
+              // We no longer use per-cell drag/touch handlers; hoverCoords is
+              // updated globally in App via elementFromPoint()
             />
-
-
-
           );
         })
       )}
