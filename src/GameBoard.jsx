@@ -84,7 +84,7 @@ function GameBoard({
               }}
               onDrop={() => handleDrop(rowIndex, colIndex)}
               onTouchMove={(e) => {
-                e.preventDefault(); // stop scrolling
+                e.preventDefault(); // stop scrolling while dragging
                 const touch = e.touches[0];
                 if (!touch) return;
 
@@ -103,6 +103,7 @@ function GameBoard({
                 handleDrop(hoverCoords[0], hoverCoords[1]);
               }}
             />
+
 
 
           );

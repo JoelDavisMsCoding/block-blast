@@ -46,6 +46,7 @@ function App() {
         }
       }
     }
+
     return true;
   }
 
@@ -62,6 +63,7 @@ function App() {
         }
       }
     }
+
     return newBoard;
   }
 
@@ -73,7 +75,7 @@ function App() {
 
     const placedBoard = placePiece(row, col, piece);
 
-    // Score from placed cells
+    // Base score from placed cells
     const placedCells = piece.shape.flat().filter((v) => v === 1).length;
     setScore((prev) => prev + placedCells * 10);
 
@@ -81,7 +83,7 @@ function App() {
     setDraggedPieceIndex(null);
     setHoverCoords(null);
 
-    // Clear lines
+    // Clear lines first
     clearLinesAnimated(placedBoard, setBoard, (finalBoard, clearedLines) => {
       if (clearedLines > 0) {
         setScore((prev) => prev + clearedLines * 100);
@@ -206,7 +208,7 @@ function App() {
     return false;
   }
 
-  // ---------- Auto-check Game Over ----------
+  // ---------- Auto-check Game Over whenever board/pieces change ----------
   useEffect(() => {
     if (gameOver) return;
 
@@ -225,27 +227,11 @@ function App() {
     }
   }, [availablePieces, board, gameOver]);
 
-  // ---------- Touch Handlers ----------
-  function handleTouchStart(index) {
-    setIsDragging(true);
-    setDraggedPieceIndex(index);
-  }
-
-  function handleTouchEnd(e) {
-    if (hoverCoords && draggedPieceIndex !== null) {
-      const [row, col] = hoverCoords;
-      onDropPiece(row, col);
-    }
-    setIsDragging(false);
-    setDraggedPieceIndex(null);
-    setHoverCoords(null);
-  }
-
   // ---------- Render ----------
   return (
     <div className="App">
       <h1 style={{ fontSize: "2rem", textAlign: "center" }}>🧱 Block Blast</h1>
-      <h2 style={{ fontSize: "2rem", textAlign: "center" }}>Score: {score}</h2>
+      <h2 style={{ fontSize: "2rem",textAlign: "center" }}>Score: {score}</h2>
 
       {gameOver && (
         <h2 style={{ textAlign: "center", color: "red" }}>Game Over!</h2>
@@ -262,6 +248,7 @@ function App() {
         }
       />
 
+
       <div
         className="pieces-container"
         style={{
@@ -271,50 +258,52 @@ function App() {
         }}
       >
         {availablePieces.map((piece, index) =>
-        piece ? (
-          <div
-            key={index}
-            className="available-piece"
-            onDragStart={() => {
-              setIsDragging(true);
-              setDraggedPieceIndex(index);
-            }}
-            onDragEnd={() => {
-              setIsDragging(false);
-              setDraggedPieceIndex(null);
-              setHoverCoords(null);
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-              setDraggedPieceIndex(index);
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              setIsDragging(false);
-              setDraggedPieceIndex(null);
-              setHoverCoords(null);
-            }}
-            style={{
-              gridTemplateRows: `repeat(${piece.shape.length}, var(--cell-size))`,
-              gridTemplateColumns: `repeat(${piece.shape[0].length}, var(--cell-size))`,
-            }}
-          >
-            {piece.shape.map((row, i) =>
-              row.map((cell, j) => (
-                <div
-                  key={`${i}-${j}`}
-                  className={`cell ${cell === 1 ? `filled color-${piece.colorId}` : ""}`}
-                  style={{
-                    visibility: cell === 1 ? "visible" : "hidden",
-                  }}
-                />
-              ))
-            )}
-          </div>
-
-        ) : null
-      )}
+          piece ? (
+            <div
+              key={index}
+              draggable
+              onDragStart={() => {
+                setIsDragging(true);
+                setDraggedPieceIndex(index);
+              }}
+              onDragEnd={() => {
+                setIsDragging(false);
+                setDraggedPieceIndex(null);
+                setHoverCoords(null);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+                setDraggedPieceIndex(index);
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                setDraggedPieceIndex(null);
+                setHoverCoords(null);
+              }}
+              className="available-piece"
+              style={{
+                gridTemplateRows: `repeat(${piece.shape.length}, var(--cell-size))`,
+                gridTemplateColumns: `repeat(${piece.shape[0].length}, var(--cell-size))`,
+              }}
+            >
+              {piece.shape.map((row, i) =>
+                row.map((cell, j) => (
+                  <div
+                    key={`${i}-${j}`}
+                    className={`cell ${
+                      cell === 1 ? `filled color-${piece.colorId}` : ""
+                    }`}
+                    style={{
+                      visibility: cell === 1 ? "visible" : "hidden",
+                    }}
+                  />
+                ))
+              )}
+            </div>
+          ) : null
+        )}
 
       </div>
     </div>
