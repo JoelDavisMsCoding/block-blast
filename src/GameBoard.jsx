@@ -24,6 +24,7 @@ function GameBoard({
   hoverCoords,
   setHoverCoords,
   currentPiece,
+  dragSource,
 }) {
   function isGhostCell(r, c) {
     if (!hoverCoords || !currentPiece) return false;
@@ -52,10 +53,7 @@ function GameBoard({
   function handleDrop(r, c) {
     if (!currentPiece) return;
     const [topOffset, leftOffset] = getTopLeftOffset(currentPiece.shape);
-    const dropRow = r - topOffset;
-    const dropCol = c - leftOffset;
-
-    onDropPiece(dropRow, dropCol);
+    onDropPiece(r - topOffset, c - leftOffset);
   }
 
   return (
@@ -63,6 +61,7 @@ function GameBoard({
       {board.map((row, rowIndex) =>
         row.map((cell, colIndex) => {
           const cellClasses = ["cell"];
+          const cellStyle = {};
 
           if (cell < 0) {
             cellClasses.push("exploding", `color-${Math.abs(cell)}`);
@@ -70,6 +69,10 @@ function GameBoard({
             cellClasses.push("filled", `color-${cell}`);
           } else if (isGhostCell(rowIndex, colIndex)) {
             cellClasses.push("ghost", `ghost-color-${currentPiece.colorId}`);
+            if (dragSource === "touch") {
+              cellStyle.transform = "translateY(-15%)";
+              cellStyle.zIndex = 1000;
+            }
           }
 
           return (
@@ -78,6 +81,7 @@ function GameBoard({
               className={cellClasses.join(" ")}
               data-row={rowIndex}
               data-col={colIndex}
+              style={cellStyle}
               onDragOver={(e) => {
                 e.preventDefault();
                 setHoverCoords([rowIndex, colIndex]);

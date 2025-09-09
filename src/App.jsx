@@ -15,7 +15,7 @@ function App() {
   const [hoverCoords, setHoverCoords] = useState(null);
   const [draggedPieceIndex, setDraggedPieceIndex] = useState(null);
   const [dragPosition, setDragPosition] = useState(null);
-  const [dragSource, setDragSource] = useState("mouse"); // 👈 NEW: "mouse" or "touch"
+  const [dragSource, setDragSource] = useState("mouse"); // "mouse" or "touch"
   const [gameOver, setGameOver] = useState(false);
 
   // ---------- Piece Generation ----------
@@ -32,20 +32,15 @@ function App() {
   // ---------- Placement Logic ----------
   function canPlacePieceAt(row, col, piece) {
     if (!piece || !piece.shape) return false;
-
     const { shape } = piece;
     const rows = shape.length;
     const cols = shape[0].length;
 
-    if (row < 0 || col < 0 || row + rows > 8 || col + cols > 8) {
-      return false;
-    }
+    if (row < 0 || col < 0 || row + rows > 8 || col + cols > 8) return false;
 
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
-        if (shape[i][j] === 1 && board[row + i][col + j] !== 0) {
-          return false;
-        }
+        if (shape[i][j] === 1 && board[row + i][col + j] !== 0) return false;
       }
     }
 
@@ -55,17 +50,11 @@ function App() {
   function placePiece(row, col, piece) {
     const newBoard = board.map((r) => [...r]);
     const { shape, colorId } = piece;
-    const rows = shape.length;
-    const cols = shape[0].length;
-
-    for (let i = 0; i < rows; i++) {
-      for (let j = 0; j < cols; j++) {
-        if (shape[i][j] === 1) {
-          newBoard[row + i][col + j] = colorId;
-        }
+    for (let i = 0; i < shape.length; i++) {
+      for (let j = 0; j < shape[i].length; j++) {
+        if (shape[i][j] === 1) newBoard[row + i][col + j] = colorId;
       }
     }
-
     return newBoard;
   }
 
@@ -76,7 +65,6 @@ function App() {
     if (!piece || !canPlacePieceAt(row, col, piece)) return;
 
     const placedBoard = placePiece(row, col, piece);
-
     const placedCells = piece.shape.flat().filter((v) => v === 1).length;
     setScore((prev) => prev + placedCells * 10);
 
@@ -86,9 +74,7 @@ function App() {
     setDragPosition(null);
 
     clearLinesAnimated(placedBoard, setBoard, (finalBoard, clearedLines) => {
-      if (clearedLines > 0) {
-        setScore((prev) => prev + clearedLines * 100);
-      }
+      if (clearedLines > 0) setScore((prev) => prev + clearedLines * 100);
       const updatedPieces = [...availablePieces];
       updatedPieces[draggedPieceIndex] = null;
       setAvailablePieces(updatedPieces);
@@ -102,17 +88,13 @@ function App() {
 
     for (let i = 0; i < 8; i++) {
       if (newBoard[i].every((cell) => cell !== 0)) {
-        for (let j = 0; j < 8; j++) {
-          cellsToClear.push([i, j, newBoard[i][j]]);
-        }
+        for (let j = 0; j < 8; j++) cellsToClear.push([i, j, newBoard[i][j]]);
       }
     }
 
     for (let j = 0; j < 8; j++) {
       if (newBoard.every((row) => row[j] !== 0)) {
-        for (let i = 0; i < 8; i++) {
-          cellsToClear.push([i, j, newBoard[i][j]]);
-        }
+        for (let i = 0; i < 8; i++) cellsToClear.push([i, j, newBoard[i][j]]);
       }
     }
 
@@ -128,7 +110,6 @@ function App() {
         onFinish(newBoard, 1);
         return;
       }
-
       const [r, c, colorId] = cellsToClear[index];
       newBoard[r][c] = -Math.abs(colorId);
       setBoard(newBoard.map((row) => [...row]));
@@ -148,9 +129,7 @@ function App() {
     const cells = [];
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
-        if (startBoard[i][j] !== 0) {
-          cells.push([i, j, startBoard[i][j]]);
-        }
+        if (startBoard[i][j] !== 0) cells.push([i, j, startBoard[i][j]]);
       }
     }
 
@@ -187,20 +166,15 @@ function App() {
     }, 500);
   }
 
-  // ---------- Check for Valid Moves ----------
+  // ---------- Check Valid Moves ----------
   function hasValidMoves(currentBoard, piecesList) {
     if (!Array.isArray(piecesList)) return false;
 
     for (const piece of piecesList) {
       if (!piece || !piece.shape) continue;
-      const rows = piece.shape.length;
-      const cols = piece.shape[0].length;
-
-      for (let row = 0; row <= 8 - rows; row++) {
-        for (let col = 0; col <= 8 - cols; col++) {
-          if (canPlacePieceAt(row, col, piece)) {
-            return true;
-          }
+      for (let row = 0; row <= 8 - piece.shape.length; row++) {
+        for (let col = 0; col <= 8 - piece.shape[0].length; col++) {
+          if (canPlacePieceAt(row, col, piece)) return true;
         }
       }
     }
@@ -213,16 +187,11 @@ function App() {
 
     const piecesExist = availablePieces.some((p) => p);
     if (piecesExist) {
-      if (!hasValidMoves(board, availablePieces)) {
-        triggerGameOver(board);
-      }
+      if (!hasValidMoves(board, availablePieces)) triggerGameOver(board);
     } else {
       const newPieces = generateThreePieces();
       setAvailablePieces(newPieces);
-
-      if (!hasValidMoves(board, newPieces)) {
-        triggerGameOver(board);
-      }
+      if (!hasValidMoves(board, newPieces)) triggerGameOver(board);
     }
   }, [availablePieces, board, gameOver]);
 
@@ -249,11 +218,7 @@ function App() {
     const handleUp = () => {
       if (draggedPieceIndex !== null && hoverCoords) {
         const piece = availablePieces[draggedPieceIndex];
-        if (piece) {
-          const dropRow = hoverCoords[0];
-          const dropCol = hoverCoords[1];
-          onDropPiece(dropRow, dropCol);
-        }
+        if (piece) onDropPiece(hoverCoords[0], hoverCoords[1]);
       }
       setIsDragging(false);
       setDraggedPieceIndex(null);
@@ -293,16 +258,10 @@ function App() {
         currentPiece={
           draggedPieceIndex !== null ? availablePieces[draggedPieceIndex] : null
         }
+        dragSource={dragSource}
       />
 
-      <div
-        className="pieces-container"
-        style={{
-          display: "flex",
-          gap: "2rem",
-          justifyContent: "center",
-        }}
-      >
+      <div className="pieces-container">
         {availablePieces.map((piece, index) =>
           piece ? (
             <div
@@ -348,20 +307,28 @@ function App() {
         )}
       </div>
 
-      {/* 👇 Floating overlay while dragging */}
+      {/* Drag overlay */}
       {isDragging && draggedPieceIndex !== null && dragPosition && (
         <div
           className="drag-overlay"
           style={{
             position: "fixed",
             left:
-              dragSource === "touch"
-                ? dragPosition.x - 40
-                : dragPosition.x + 10,
+              dragPosition.x -
+              (availablePieces[draggedPieceIndex].shape[0].length / 2) *
+                parseInt(
+                  getComputedStyle(document.documentElement).getPropertyValue(
+                    "--cell-size"
+                  )
+                ),
             top:
-              dragSource === "touch"
-                ? dragPosition.y - 100
-                : dragPosition.y + 10,
+              dragPosition.y -
+              (availablePieces[draggedPieceIndex].shape.length / 2) *
+                parseInt(
+                  getComputedStyle(document.documentElement).getPropertyValue(
+                    "--cell-size"
+                  )
+                ),
             pointerEvents: "none",
             zIndex: 9999,
             display: "grid",
