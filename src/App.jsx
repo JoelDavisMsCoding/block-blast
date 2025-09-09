@@ -14,7 +14,8 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [hoverCoords, setHoverCoords] = useState(null);
   const [draggedPieceIndex, setDraggedPieceIndex] = useState(null);
-  const [dragPosition, setDragPosition] = useState(null); // 👈 new
+  const [dragPosition, setDragPosition] = useState(null);
+  const [dragSource, setDragSource] = useState("mouse"); // 👈 NEW: "mouse" or "touch"
   const [gameOver, setGameOver] = useState(false);
 
   // ---------- Piece Generation ----------
@@ -206,7 +207,7 @@ function App() {
     return false;
   }
 
-  // ---------- Auto-check Game Over whenever board/pieces change ----------
+  // ---------- Auto-check Game Over ----------
   useEffect(() => {
     if (gameOver) return;
 
@@ -249,8 +250,6 @@ function App() {
       if (draggedPieceIndex !== null && hoverCoords) {
         const piece = availablePieces[draggedPieceIndex];
         if (piece) {
-          const rows = piece.shape.length;
-          const cols = piece.shape[0].length;
           const dropRow = hoverCoords[0];
           const dropCol = hoverCoords[1];
           onDropPiece(dropRow, dropCol);
@@ -312,10 +311,12 @@ function App() {
               onDragStart={() => {
                 setIsDragging(true);
                 setDraggedPieceIndex(index);
+                setDragSource("mouse");
               }}
               onTouchStart={() => {
                 setIsDragging(true);
                 setDraggedPieceIndex(index);
+                setDragSource("touch");
               }}
               onDragEnd={() => {
                 setIsDragging(false);
@@ -353,16 +354,22 @@ function App() {
           className="drag-overlay"
           style={{
             position: "fixed",
-            left: dragPosition.x + 10,
-            top: dragPosition.y + 10,
+            left:
+              dragSource === "touch"
+                ? dragPosition.x - 40
+                : dragPosition.x + 10,
+            top:
+              dragSource === "touch"
+                ? dragPosition.y - 100
+                : dragPosition.y + 10,
             pointerEvents: "none",
             zIndex: 9999,
             display: "grid",
             gridTemplateRows: `repeat(${availablePieces[draggedPieceIndex].shape.length}, var(--cell-size))`,
             gridTemplateColumns: `repeat(${availablePieces[draggedPieceIndex].shape[0].length}, var(--cell-size))`,
             gap: "var(--gap-size)",
-            opacity: 0.8,
-            transform: "scale(0.9)",
+            opacity: 0.9,
+            transform: "scale(1.05)",
           }}
         >
           {availablePieces[draggedPieceIndex].shape.map((row, i) =>
