@@ -53,7 +53,10 @@ function GameBoard({
   function handleDrop(r, c) {
     if (!currentPiece) return;
     const [topOffset, leftOffset] = getTopLeftOffset(currentPiece.shape);
-    onDropPiece(r - topOffset, c - leftOffset);
+    const dropRow = r - topOffset;
+    const dropCol = c - leftOffset;
+
+    onDropPiece(dropRow, dropCol);
   }
 
   return (
@@ -61,7 +64,7 @@ function GameBoard({
       {board.map((row, rowIndex) =>
         row.map((cell, colIndex) => {
           const cellClasses = ["cell"];
-          const cellStyle = {};
+          let cellStyle = {};
 
           if (cell < 0) {
             cellClasses.push("exploding", `color-${Math.abs(cell)}`);
@@ -70,7 +73,7 @@ function GameBoard({
           } else if (isGhostCell(rowIndex, colIndex)) {
             cellClasses.push("ghost", `ghost-color-${currentPiece.colorId}`);
             if (dragSource === "touch") {
-              cellStyle.transform = "translateY(-15%)";
+              cellStyle.transform = "translateY(-25%) scale(1.1)";
               cellStyle.zIndex = 1000;
             }
           }
