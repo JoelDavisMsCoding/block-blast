@@ -357,13 +357,13 @@ function App() {
             left:
               dragSource === "touch"
                 ? dragPosition.x -
-                  availablePieces[draggedPieceIndex].shape[0].length * 18
+                  availablePieces[draggedPieceIndex].shape[0].length * 22
                 : dragPosition.x + 10,
             top:
               dragSource === "touch"
                 ? dragPosition.y -
-                  availablePieces[draggedPieceIndex].shape.length * 18 -
-                  40
+                  availablePieces[draggedPieceIndex].shape.length * 22 -
+                  80
                 : dragPosition.y + 10,
             pointerEvents: "none",
             zIndex: 9999,
