@@ -378,18 +378,19 @@ function App() {
           }}
         >
           {availablePieces[draggedPieceIndex].shape.map((row, i) =>
-            row.map((cell, j) => (
-              <div
-                key={`${i}-${j}`}
-                className={`cell ${
-                  cell === 1
-                    ? `filled color-${availablePieces[draggedPieceIndex].colorId}`
-                    : ""
-                }`}
-                style={{ visibility: cell === 1 ? "visible" : "hidden" }}
-              />
-            ))
-          )}
+  row.map((cell, j) => (
+    <div
+      key={`${i}-${j}`}
+      className={`cell ${
+        cell === 1
+          ? `ghost ghost-color-${availablePieces[draggedPieceIndex].colorId}`
+          : ""
+      }`}
+      style={{ visibility: cell === 1 ? "visible" : "hidden" }}
+    />
+  ))
+)}
+
         </div>
       )}
     </div>

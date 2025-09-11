@@ -27,28 +27,31 @@ function GameBoard({
   dragSource,
 }) {
   function isGhostCell(r, c) {
-    if (!hoverCoords || !currentPiece) return false;
-    const [hoverRow, hoverCol] = hoverCoords;
-    const shape = currentPiece.shape;
-    const [topOffset, leftOffset] = getTopLeftOffset(shape);
-    const baseRow = hoverRow - topOffset;
-    const baseCol = hoverCol - leftOffset;
+  if (dragSource === "touch") return false; // Skip ghost rendering during touch
+  if (!hoverCoords || !currentPiece) return false;
+  
+  const [hoverRow, hoverCol] = hoverCoords;
+  const shape = currentPiece.shape;
+  const [topOffset, leftOffset] = getTopLeftOffset(shape);
+  const baseRow = hoverRow - topOffset;
+  const baseCol = hoverCol - leftOffset;
 
-    if (!canPlacePieceAt(baseRow, baseCol, currentPiece)) return false;
+  if (!canPlacePieceAt(baseRow, baseCol, currentPiece)) return false;
 
-    for (let i = 0; i < shape.length; i++) {
-      for (let j = 0; j < shape[i].length; j++) {
-        if (
-          shape[i][j] === 1 &&
-          r === baseRow + i &&
-          c === baseCol + j
-        ) {
-          return true;
-        }
+  for (let i = 0; i < shape.length; i++) {
+    for (let j = 0; j < shape[i].length; j++) {
+      if (
+        shape[i][j] === 1 &&
+        r === baseRow + i &&
+        c === baseCol + j
+      ) {
+        return true;
       }
     }
-    return false;
   }
+  return false;
+}
+
 
   function handleDrop(r, c) {
     if (!currentPiece) return;
@@ -73,7 +76,7 @@ function GameBoard({
           } else if (isGhostCell(rowIndex, colIndex)) {
             cellClasses.push("ghost", `ghost-color-${currentPiece.colorId}`);
             if (dragSource === "touch") {
-              cellStyle.transform = "translateY(-150%) scale(1.1)";
+              cellStyle.transform = "translateY(-60%) scale(1.1)";
               cellStyle.zIndex = 2000;
             }
           }
