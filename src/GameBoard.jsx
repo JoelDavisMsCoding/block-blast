@@ -73,7 +73,7 @@ function GameBoard({
           } else if (isGhostCell(rowIndex, colIndex)) {
             cellClasses.push("ghost", `ghost-color-${currentPiece.colorId}`);
             if (dragSource === "touch") {
-              cellStyle.transform = "translateY(-120%) scale(1.1)";
+              cellStyle.transform = "translateY(-150%) scale(1.1)";
               cellStyle.zIndex = 2000;
             }
           }
