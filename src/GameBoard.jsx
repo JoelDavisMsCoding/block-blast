@@ -2,9 +2,7 @@ import React from "react";
 import "./GameBoard.css";
 
 function getTopLeftOffset(shape) {
-  let top = null;
-  let left = null;
-
+  let top = null, left = null;
   for (let i = 0; i < shape.length; i++) {
     for (let j = 0; j < shape[i].length; j++) {
       if (shape[i][j] === 1) {
@@ -13,7 +11,6 @@ function getTopLeftOffset(shape) {
       }
     }
   }
-
   return [top || 0, left || 0];
 }
 
@@ -26,41 +23,25 @@ function GameBoard({
   currentPiece,
   dragSource,
 }) {
-  function isGhostCell(r, c) {
-  if (dragSource === "touch") return false; // Skip ghost rendering during touch
-  if (!hoverCoords || !currentPiece) return false;
-  
-  const [hoverRow, hoverCol] = hoverCoords;
-  const shape = currentPiece.shape;
-  const [topOffset, leftOffset] = getTopLeftOffset(shape);
-  const baseRow = hoverRow - topOffset;
-  const baseCol = hoverCol - leftOffset;
-
-  if (!canPlacePieceAt(baseRow, baseCol, currentPiece)) return false;
-
-  for (let i = 0; i < shape.length; i++) {
-    for (let j = 0; j < shape[i].length; j++) {
-      if (
-        shape[i][j] === 1 &&
-        r === baseRow + i &&
-        c === baseCol + j
-      ) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-
-  function handleDrop(r, c) {
-    if (!currentPiece) return;
+  function getGhostCells() {
+    if (!hoverCoords || !currentPiece) return [];
+    const [hoverRow, hoverCol] = hoverCoords;
     const [topOffset, leftOffset] = getTopLeftOffset(currentPiece.shape);
-    const dropRow = r - topOffset;
-    const dropCol = c - leftOffset;
+    const baseRow = hoverRow - topOffset;
+    const baseCol = hoverCol - leftOffset;
 
-    onDropPiece(dropRow, dropCol);
+    if (!canPlacePieceAt(baseRow, baseCol, currentPiece)) return [];
+
+    const coords = [];
+    currentPiece.shape.forEach((row, i) =>
+      row.forEach((val, j) => {
+        if (val === 1) coords.push([baseRow + i, baseCol + j]);
+      })
+    );
+    return coords;
   }
+
+  const ghostCells = getGhostCells();
 
   return (
     <div className="board">
@@ -73,12 +54,10 @@ function GameBoard({
             cellClasses.push("exploding", `color-${Math.abs(cell)}`);
           } else if (cell > 0) {
             cellClasses.push("filled", `color-${cell}`);
-          } else if (isGhostCell(rowIndex, colIndex)) {
+          } else if (
+            ghostCells.some(([r, c]) => r === rowIndex && c === colIndex)
+          ) {
             cellClasses.push("ghost", `ghost-color-${currentPiece.colorId}`);
-            if (dragSource === "touch") {
-              cellStyle.transform = "translateY(-60%) scale(1.1)";
-              cellStyle.zIndex = 2000;
-            }
           }
 
           return (
@@ -92,10 +71,26 @@ function GameBoard({
                 e.preventDefault();
                 setHoverCoords([rowIndex, colIndex]);
               }}
-              onDrop={() => handleDrop(rowIndex, colIndex)}
+              onDrop={() => onDropPiece(rowIndex, colIndex)}
             />
           );
         })
+      )}
+
+      {/* 👉 Ghost overlay container (only in touch mode) */}
+      {dragSource === "touch" && ghostCells.length > 0 && (
+        <div className="ghost-container touch">
+          {ghostCells.map(([r, c]) => (
+            <div
+              key={`${r}-${c}`}
+              className={`cell ghost ghost-color-${currentPiece.colorId}`}
+              style={{
+                gridRowStart: r + 1,
+                gridColumnStart: c + 1,
+              }}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

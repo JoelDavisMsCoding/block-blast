@@ -106,6 +106,22 @@
   transition: transform 0.05s;
 }
 
+.ghost-container {
+  position: absolute;
+  display: contents; /* lets ghost cells sit on the grid */
+  pointer-events: none;
+  z-index: 2000;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.ghost-container.touch {
+  opacity: 1;
+  transform: translateY(-50%) scale(1); /* 👈 offset ghost above finger */
+}
+
+
 
 @keyframes explode {
   0%   { transform: scale(1); opacity: 1; box-shadow: 0 0 4px white; }
