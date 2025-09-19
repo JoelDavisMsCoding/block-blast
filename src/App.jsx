@@ -356,14 +356,11 @@ function App() {
             position: "fixed",
             left:
               dragSource === "touch"
-                ? dragPosition.x -
-                  availablePieces[draggedPieceIndex].shape[0].length * 22
+                ? dragPosition.x + 30 // ✅ offset right of finger
                 : dragPosition.x + 10,
             top:
               dragSource === "touch"
-                ? dragPosition.y -
-                  availablePieces[draggedPieceIndex].shape.length * 22 -
-                  80
+                ? dragPosition.y - 90 // ✅ above finger
                 : dragPosition.y + 10,
             pointerEvents: "none",
             zIndex: 9999,
