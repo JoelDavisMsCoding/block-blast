@@ -1,6 +1,8 @@
 :root {
   --cell-size: clamp(30px, 6vw, 70px);
   --gap-size: clamp(2px, 0.8vw, 4px);
+  --drag-offset-x-touch: -30px;   /* horizontal offset applied to touch sample point(negative/left, positive/right) */ 
+  --drag-offset-y-touch: -100px;  /* vertical offset applied to touch sample point (negative moves up) */
 }
 
 /* Base board + cells */

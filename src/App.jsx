@@ -230,12 +230,44 @@ function App() {
     if (!isDragging) return;
 
     const handleMove = (e) => {
+      // For touch events, e is a TouchEvent; for mouse, it's a MouseEvent
       const point = e.touches ? e.touches[0] : e;
       if (!point) return;
+
+      // Prevent page scroll while touch-dragging
+      if (e.touches) {
+        e.preventDefault?.();
+      }
+
+      // Always keep overlay following the raw finger/mouse
       setDragPosition({ x: point.clientX, y: point.clientY });
 
-      const el = document.elementFromPoint(point.clientX, point.clientY);
-      if (!el) return;
+      // Compute where we want to sample the board for the ghost preview:
+      // - For mouse: use the exact point
+      // - For touch: use an offset point (touch + CSS variable offsets)
+      let sampleX = point.clientX;
+      let sampleY = point.clientY;
+
+      if (e.touches || dragSource === "touch") {
+        const style = getComputedStyle(document.documentElement);
+        const oxRaw = style.getPropertyValue("--drag-offset-x-touch");
+        const oyRaw = style.getPropertyValue("--drag-offset-y-touch");
+        const ox = Number.parseFloat(oxRaw) || 30; // px to the right
+        const oy = Number.parseFloat(oyRaw) || -90; // px above (negative moves up)
+
+        sampleX = point.clientX + ox;
+        sampleY = point.clientY + oy;
+      }
+
+      // Clamp sample point to viewport so elementFromPoint always works
+      sampleX = Math.max(1, Math.min(window.innerWidth - 1, sampleX));
+      sampleY = Math.max(1, Math.min(window.innerHeight - 1, sampleY));
+
+      const el = document.elementFromPoint(sampleX, sampleY);
+      if (!el) {
+        setHoverCoords(null);
+        return;
+      }
       const row = el.dataset?.row;
       const col = el.dataset?.col;
       if (row !== undefined && col !== undefined) {
@@ -271,7 +303,7 @@ function App() {
       window.removeEventListener("touchmove", handleMove);
       window.removeEventListener("touchend", handleUp);
     };
-  }, [isDragging, draggedPieceIndex, hoverCoords]);
+  }, [isDragging, draggedPieceIndex, hoverCoords, dragSource, availablePieces]);
 
   // ---------- Render ----------
   return (
@@ -313,10 +345,16 @@ function App() {
                 setDraggedPieceIndex(index);
                 setDragSource("mouse");
               }}
-              onTouchStart={() => {
+              onTouchStart={(e) => {
+                // capture initial touch position so overlay appears immediately
+                const touch = e.touches ? e.touches[0] : e;
+                e.preventDefault?.();
                 setIsDragging(true);
                 setDraggedPieceIndex(index);
                 setDragSource("touch");
+                if (touch) {
+                  setDragPosition({ x: touch.clientX, y: touch.clientY });
+                }
               }}
               onDragEnd={() => {
                 setIsDragging(false);
@@ -334,9 +372,7 @@ function App() {
                 row.map((cell, j) => (
                   <div
                     key={`${i}-${j}`}
-                    className={`cell ${
-                      cell === 1 ? `filled color-${piece.colorId}` : ""
-                    }`}
+                    className={`cell ${cell === 1 ? `filled color-${piece.colorId}` : ""}`}
                     style={{
                       visibility: cell === 1 ? "visible" : "hidden",
                     }}
@@ -356,11 +392,11 @@ function App() {
             position: "fixed",
             left:
               dragSource === "touch"
-                ? dragPosition.x + 30 // ✅ offset right of finger
+                ? `calc(${dragPosition.x}px + var(--drag-offset-x-touch))`
                 : dragPosition.x + 10,
             top:
               dragSource === "touch"
-                ? dragPosition.y - 90 // ✅ above finger
+                ? `calc(${dragPosition.y}px + var(--drag-offset-y-touch))`
                 : dragPosition.y + 10,
             pointerEvents: "none",
             zIndex: 9999,
@@ -379,9 +415,7 @@ function App() {
               <div
                 key={`${i}-${j}`}
                 className={`cell ${
-                  cell === 1
-                    ? `filled color-${availablePieces[draggedPieceIndex].colorId}`
-                    : ""
+                  cell === 1 ? `filled color-${availablePieces[draggedPieceIndex].colorId}` : ""
                 }`}
                 style={{ visibility: cell === 1 ? "visible" : "hidden" }}
               />

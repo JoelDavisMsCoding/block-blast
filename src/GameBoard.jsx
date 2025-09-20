@@ -38,11 +38,7 @@ function GameBoard({
 
     for (let i = 0; i < shape.length; i++) {
       for (let j = 0; j < shape[i].length; j++) {
-        if (
-          shape[i][j] === 1 &&
-          r === baseRow + i &&
-          c === baseCol + j
-        ) {
+        if (shape[i][j] === 1 && r === baseRow + i && c === baseCol + j) {
           return true;
         }
       }
@@ -72,7 +68,7 @@ function GameBoard({
             cellClasses.push("filled", `color-${cell}`);
           } else if (isGhostCell(rowIndex, colIndex)) {
             cellClasses.push("ghost", `ghost-color-${currentPiece.colorId}`);
-            // ✅ Removed translateY(-120%) for touch
+            // no extra transform here — appearance unchanged
           }
 
           return (
